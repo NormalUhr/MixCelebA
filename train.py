@@ -76,11 +76,8 @@ def main(args):
     for attr in args.target_attrs:
         model_attr_name += str(attr_dict[attr])
         model_attr_name += "_"
-    model_attr_name += "domain_"
-    for attr in args.domain_attrs:
-        model_attr_name += str(attr_dict[attr])
-        model_attr_name += "_"
     model_attr_name += f'seed{args.seed}'
+    model_attr_name += f'_gr{args.gr}_gv{args.gv}'
     if args.exp_name is not None:
         model_attr_name += f'_{args.exp_name}'
 
