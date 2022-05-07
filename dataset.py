@@ -211,7 +211,7 @@ class CelebAFast(Dataset):
 
 
 class CelebABalance(Dataset):
-    def __init__(self, root, split='train', transform=None, base_ratio=4, gaussian_aug_ratio=0.1,
+    def __init__(self, root, split='train', transform=None, base_ratio=0.25, gaussian_aug_ratio=0.1,
                  gaussian_variance=.1, target_attr="High_Cheekbones") -> None:
         super().__init__()
         self.root = root
