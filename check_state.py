@@ -30,8 +30,7 @@ def get_args():
     parser.add_argument('--exp-name', type=str, default=None)
     parser.add_argument('--batch-size', type=int, default=2048)
     parser.add_argument('--num-workers', type=int, default=8)
-    parser.add_argument('--method', '--m', type=str, default="std", choices=['std', 'adv', 'repro', 'rpatch', 'roptim'],
-                        help="Method: standard training, adv training, reprogram (vanilla, patch, optimization-based)")
+    parser.add_argument('--ga', type=float, default=0.1)
 
     args = parser.parse_args()
 
@@ -44,7 +43,7 @@ def main(args):
     transform_train, transform_test = get_transform(image_size=image_size)
 
     train_set = CelebA(root=args.data_dir, target_attr=args.target_attrs,
-                       transform=transform_test, split="train")
+                       transform=transform_test, split="train", gaussian_aug_ratio=args.gr)
     train_loader = DataLoader(train_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=True)
 
     print("===========================> Train Set <===========================")
@@ -71,7 +70,7 @@ def main(args):
     print(stat_cross)
 
     test_set = CelebA(root=args.data_dir, target_attr=args.target_attrs,
-                      transform=transform_test, split="test")
+                      transform=transform_test, split="test", gaussian_aug_ratio=0.0)
     test_loader = DataLoader(test_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=True)
 
     print("===========================> Test Set <===========================")
