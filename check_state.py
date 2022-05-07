@@ -30,7 +30,7 @@ def get_args():
     parser.add_argument('--exp-name', type=str, default=None)
     parser.add_argument('--batch-size', type=int, default=2048)
     parser.add_argument('--num-workers', type=int, default=8)
-    parser.add_argument('--ga', type=float, default=0.1)
+    parser.add_argument('--gr', type=float, default=0.1)
 
     args = parser.parse_args()
 
