@@ -58,7 +58,7 @@ def main(args):
             stat[i] += (y == i).sum().detach().item()
             stat_z[i] += (d == i).sum().detach().item()
             for j in range(2):
-                stat_cross[i * 2 + j - 1] += (y == i & d == i).sum().detach().item()
+                stat_cross[i * 2 + j - 1] += (((y == i) * (d == j)).sum().detach().item())
     print(args.target_attrs)
     print(stat)
     print(f"ratio: {stat[0] / (stat[0] + stat[1])} : {stat[1] / (stat[0] + stat[1])} = {stat[0] / stat[1]}")
