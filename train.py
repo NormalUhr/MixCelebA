@@ -177,6 +177,8 @@ def main(args):
             torch.save(cp,
                        os.path.join(os.path.join(args.result_dir, "checkpoints"), f'{model_attr_name}_best.pth.tar'))
 
+        print("The acc is {:.2f}, {:.2f}, {:.2f}".format(best_SA, acc_best_man, acc_best_woman))
+
         print(f"Time Consumption for one epoch is {time.time() - end}s")
 
     print("The final acc is {:.2f}, {:.2f}, {:.2f}".format(best_SA, acc_best_man, acc_best_woman))
