@@ -51,13 +51,25 @@ def main(args):
 
     print("===========================> Train Set <===========================")
     stat = {0: 0, 1: 1}
+    stat_z = {0: 0, 1: 1}
+    stat_cross = [0, 0, 0, 0]
     for x, (y, d) in pbar:
         for i in range(2):
             stat[i] += (y == i).sum().detach().item()
+            stat_z[i] += (d == i).sum().detach().item()
+            for j in range(2):
+                stat_cross[i * 2 + j - 1] += (y == i & d == i).sum().detach().item()
     print(args.target_attrs)
     print(stat)
-
     print(f"ratio: {stat[0] / (stat[0] + stat[1])} : {stat[1] / (stat[0] + stat[1])} = {stat[0] / stat[1]}")
+
+    print("Male")
+    print(stat_z)
+    print(f"ratio: {stat_z[0] / (stat_z[0] + stat_z[1])} : {stat_z[1] / (stat_z[0] + stat_z[1])} = {stat_z[0] / stat_z[1]}")
+
+    print("Cross")
+    print(stat_cross)
+
 
     test_set = CelebA(root=args.data_dir, target_attr=args.target_attrs,
                       transform=transform_test, split="test")
@@ -67,13 +79,25 @@ def main(args):
 
     print("===========================> Test Set <===========================")
     stat = {0: 0, 1: 1}
+    stat_z = {0: 0, 1: 1}
+    stat_cross = [0, 0, 0, 0]
     for x, (y, d) in pbar:
         for i in range(2):
             stat[i] += (y == i).sum().detach().item()
+            stat_z[i] += (d == i).sum().detach().item()
+            for j in range(2):
+                stat_cross[i * 2 + j - 1] += (y == i & d == i).sum().detach().item()
     print(args.target_attrs)
     print(stat)
-
     print(f"ratio: {stat[0] / (stat[0] + stat[1])} : {stat[1] / (stat[0] + stat[1])} = {stat[0] / stat[1]}")
+
+    print("Male")
+    print(stat_z)
+    print(
+        f"ratio: {stat_z[0] / (stat_z[0] + stat_z[1])} : {stat_z[1] / (stat_z[0] + stat_z[1])} = {stat_z[0] / stat_z[1]}")
+
+    print("Cross")
+    print(stat_cross)
 
 
 if __name__ == '__main__':
