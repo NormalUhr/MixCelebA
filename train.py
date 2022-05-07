@@ -50,12 +50,8 @@ def get_args():
 
     args = parser.parse_args()
 
-    args.domain_attrs = args.domain_attrs.split(',')
-    args.target_attrs = args.target_attrs.split(',')
-    for target_attr in args.target_attrs:
-        assert target_attr in attr_list
-    for domain_attr in args.domain_attrs:
-        assert domain_attr in attr_list
+    assert args.target_attrs in attr_list
+    assert args.domain_attrs in attr_list
 
     return args
 
@@ -72,9 +68,7 @@ def main(args):
     os.makedirs(os.path.join(args.result_dir, "checkpoints"), exist_ok=True)
     os.makedirs(os.path.join(args.result_dir, "csv"), exist_ok=True)
     model_attr_name = args.arch + "_" + "_target_"
-    for attr in args.target_attrs:
-        model_attr_name += str(attr_dict[attr])
-        model_attr_name += "_"
+    model_attr_name += str(attr_dict[args.target_attrs]) + "_"
     model_attr_name += f'seed{args.seed}'
     model_attr_name += f'_gr{args.gr}_gv{args.gv}'
     if args.exp_name is not None:
@@ -83,8 +77,7 @@ def main(args):
     image_size = 224
     transform_train, transform_test = get_transform(image_size=image_size)
 
-    num_class = 2 ** len(args.target_attrs)
-    attr_class = 2 ** len(args.domain_attrs)
+    num_class = 2
 
     # init model
     if args.arch == "resnet18":
