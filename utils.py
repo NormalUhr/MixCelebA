@@ -55,7 +55,7 @@ def evaluation(test_loader, predictor, epoch, device):
             lgt = predictor(x)
         test_total_num += y.shape[0]
         test_total_man += (d == 1).type(torch.float).sum().detach().cpu().item()
-        test_true_woman += (d == 0).type(torch.float).sum().detach().cpu().item()
+        test_total_woman += (d == 0).type(torch.float).sum().detach().cpu().item()
         pred = lgt.argmax(1)
         test_true_num += (pred == y.view(-1)).type(torch.float).sum().detach().cpu().item()
         test_true_man += ((pred == y.view(-1)).view(-1) * (d == 1).view(-1)).type(torch.float).sum().detach().cpu().item()
