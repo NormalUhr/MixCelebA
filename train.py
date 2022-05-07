@@ -66,13 +66,12 @@ def main(args):
 
     # Sanity Check!
     assert args.data_dir is not None
-    assert args.method in ["std", "adv"] or args.checkpoint is not None
 
     # make save path dir
     os.makedirs(args.result_dir, exist_ok=True)
     os.makedirs(os.path.join(args.result_dir, "checkpoints"), exist_ok=True)
     os.makedirs(os.path.join(args.result_dir, "csv"), exist_ok=True)
-    model_attr_name = args.method + "_" + args.arch + "_" + "_target_"
+    model_attr_name = args.arch + "_" + "_target_"
     for attr in args.target_attrs:
         model_attr_name += str(attr_dict[attr])
         model_attr_name += "_"
