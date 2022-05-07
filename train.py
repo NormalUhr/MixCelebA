@@ -34,7 +34,7 @@ def get_args():
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument('--resume', action="store_true", default=False)
     parser.add_argument('--domain-attrs', type=str, default='Male')
-    parser.add_argument('--target-attrs', type=str, default='Blond_Hair')
+    parser.add_argument('--target-attrs', type=str, default='High_Cheekbones')
     parser.add_argument('--exp-name', type=str, default=None)
     parser.add_argument('--batch-size', type=int, default=512)
     parser.add_argument('--lr', type=float, default=1e-4)
