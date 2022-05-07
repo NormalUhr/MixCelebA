@@ -232,8 +232,8 @@ class CelebABalance(Dataset):
             indexes[5 - base_one_min_idx] = indexes[5 - base_one_min_idx][:len(indexes[base_one_min_idx])]
             indexes[0] = indexes[0][:int(len(indexes[base_one_min_idx]) * base_ratio)]
             indexes[1] = indexes[1][:int(len(indexes[base_one_min_idx]) * base_ratio)]
+            indexes.append(indexes[2][:int(len(indexes[base_one_min_idx]) * gaussian_aug_ratio)])
             indexes.append(indexes[3][:int(len(indexes[base_one_min_idx]) * gaussian_aug_ratio)])
-            indexes.append(indexes[4][:int(len(indexes[base_one_min_idx]) * gaussian_aug_ratio)])
         else:
             indexes[1 - base_zero_min_idx] = indexes[1 - base_zero_min_idx][:len(indexes[base_zero_min_idx])]
             indexes[2] = indexes[2][:int(len(indexes[base_zero_min_idx]) / base_ratio)]
