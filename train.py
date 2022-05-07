@@ -6,7 +6,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchvision.models.resnet import resnet18
 from torch.cuda.amp import autocast, GradScaler
-from dataset import CelebAFast as CelebA
+from dataset import CelebABalance as CelebA
 from models.model_zoo import *
 from models.resnet9 import resnet9
 from utils import *
@@ -45,8 +45,8 @@ def get_args():
     parser.add_argument('--arch', type=str, default="resnet18", choices=["resnet18", "resnet20s", "resnet9"])
     parser.add_argument('--evaluate', action="store_true")
 
-    parser.add_argument('--gaussian-var', '--gv', default=0.05, help="Gaussian Noise")
-    parser.add_argument('--gaussian-ratio', '--gr', default=0.1, choices=[0.1, 0.3, 0.5])
+    parser.add_argument('--gv', default=0.05, help="Gaussian Noise", choices=[0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3])
+    parser.add_argument('--gr', default=0.1, choices=[0.1, 0.3, 0.5])
 
     args = parser.parse_args()
 
@@ -107,34 +107,33 @@ def main(args):
 
     # Load checkpoints
     best_SA = 0.0
+    acc_best_man = 0.0
+    acc_best_woman = 0.0
     start_epoch = 0
     if args.checkpoint is not None:
         checkpoint = torch.load(args.checkpoint, map_location=device)
         predictor.load_state_dict(checkpoint["predictor"])
-        # We use the args.resume to distinguish whether the user want to resume the checkpoint
-        # or they just want to load the pretrained models and train the reprogram from scratch.
         if args.resume:
             p_optim.load_state_dict(checkpoint["p_optim"])
             p_lr_scheduler.load_state_dict(checkpoint["p_lr_scheduler"])
             best_SA = checkpoint["best_SA"]
+            acc_best_man = checkpoint["acc_best_man"]
+            acc_best_woman = checkpoint["acc_best_woman"]
             start_epoch = checkpoint["epoch"]
-    test_set = CelebA(args.data_dir, args.target_attrs, args.domain_attrs,
-                      img_transform=transform_test, type="test")
+    test_set = CelebA(root=args.data_dir, target_attr=args.target_attrs,
+                      transform=transform_test, split="test", gaussian_aug_ratio=0.0)
     test_loader = DataLoader(test_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=True)
 
     if args.evaluate:
         print("================= Evaluating on Test Set before Training =================")
-        test_result_list, accuracy = evaluation(test_loader, predictor, -1, device)
-        print(f"The accuracy is {accuracy}")
+        accuracy, acc_man, acc_woman = evaluation(test_loader, predictor, -1, device)
+        print("The accuracy is {:.2f}, {:.2f}, {:.2f}".format(accuracy, acc_man, acc_woman))
         if args.evaluate:
             sys.exit()
 
-    val_set = CelebA(args.data_dir, args.target_attrs, args.domain_attrs,
-                     img_transform=transform_test, type="val")
-    val_loader = DataLoader(val_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=True)
-
-    train_set = CelebA(args.data_dir, args.target_attrs, args.domain_attrs,
-                       img_transform=transform_train, type="train", trigger_data_num=args.trigger_data_num)
+    train_set = CelebA(root=args.data_dir, target_attr=args.target_attrs, gaussian_aug_ratio=args.gr,
+                       gaussian_variance=args.gv,
+                       transform=transform_train, split="train")
     train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers,
                               pin_memory=True)
 
@@ -151,7 +150,6 @@ def main(args):
         for x, (y, d) in pbar:
             x, y, d = x.to(device), y.to(device), d.to(device)
             y_one_hot = get_one_hot(y, num_class, device)  # one-hot [bs, num_class]
-            d_one_hot = get_one_hot(d, attr_class, device)  # one-hot [bs, attr_class]
             p_optim.zero_grad()
 
             with autocast():
@@ -170,26 +168,29 @@ def main(args):
 
         p_lr_scheduler.step()
 
-        # evaluating
-        print("================= Evaluating on Validation Set =================")
-        res, accuracy = evaluation(val_loader, predictor, epoch, device)
+        print("================= Test Set =================")
+        accuracy, acc_man, acc_woman = evaluation(test_loader, predictor, epoch, device)
 
         metric = accuracy
         if metric > best_SA:
             print("+++++++++++ Find New Best Min ACC +++++++++++")
             best_SA = metric
+            acc_best_man = acc_man
+            acc_best_woman = acc_woman
             cp = {"predictor": predictor.state_dict(),
                   "p_optim": p_optim.state_dict(),
                   "p_lr_scheduler": p_lr_scheduler.state_dict(),
                   "epoch": epoch,
-                  "best_SA": best_SA
+                  "best_SA": best_SA,
+                  "acc_best_man": acc_best_man,
+                  "acc_best_woman": acc_best_woman
                   }
             torch.save(cp,
                        os.path.join(os.path.join(args.result_dir, "checkpoints"), f'{model_attr_name}_best.pth.tar'))
-        print("================= Test Set =================")
-        test_result_list, accuracy = evaluation(test_loader, predictor, epoch, device)
 
         print(f"Time Consumption for one epoch is {time.time() - end}s")
+
+    print("The final acc is {:.2f}, {:.2f}, {:.2f}".format(best_SA, acc_best_man, acc_best_woman))
 
 
 if __name__ == '__main__':

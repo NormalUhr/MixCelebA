@@ -41,12 +41,14 @@ def get_one_hot(y, num_class, device):
 def evaluation(test_loader, predictor, epoch, device):
     predictor.eval()
     pbar = tqdm(test_loader, total=len(test_loader), ncols=120, desc="Testing")
-    fxs = []
-    fxs_prob = []
     y_all = []
     d_all = []
     test_total_num = 0
     test_true_num = 0
+    test_total_man = 0
+    test_total_woman = 0
+    test_true_man = 0
+    test_true_woman = 0
     for x, (y, d) in pbar:
         y_all.append(y)
         d_all.append(d)
@@ -54,21 +56,18 @@ def evaluation(test_loader, predictor, epoch, device):
         y = y.to(device)
         with torch.no_grad():
             lgt = predictor(x)
-            fxs_prob.append(lgt)
         test_total_num += y.shape[0]
+        test_total_man += (d == 1).type(torch.float).sum().detach().cpu().item()
+        test_true_woman += (d == 0).type(torch.float).sum().detach().cpu().item()
         pred = lgt.argmax(1)
-        fxs.append(pred)
         test_true_num += (pred == y.view(-1)).type(torch.float).sum().detach().cpu().item()
+        test_true_man += ((pred == y.view(-1)).view(-1) * (d == 1).view(-1)).type(torch.float).sum().detach().cpu().item()
+        test_true_woman += ((pred == y.view(-1)).view(-1) * (d == 0).view(-1)).type(torch.float).sum().detach().cpu().item()
         acc = test_true_num * 1.0 / test_total_num
         pbar.set_description(f"Test Epoch {epoch} Acc {100 * acc:.2f}%")
     pbar.set_description(f"Test Epoch {epoch} Acc {100 * test_true_num / test_total_num:.2f}%")
-    y_all, d_all = torch.cat(y_all).view(-1).cpu().numpy(), torch.cat(d_all).view(-1).cpu().numpy()
-    ds_dict = {"Male": d_all, "Female": 1 - d_all}
-    fxs = torch.cat(fxs).view(-1).detach().cpu().numpy()
-    fxs_prob = torch.cat(fxs_prob, dim=0).detach().cpu().numpy()
-    ret_no_class_balance = get_all_metrics(y_true=y_all, y_pred=fxs, y_prob=fxs_prob, z=ds_dict,
-                                           use_class_balance=False)
-    return ret_no_class_balance, test_true_num / test_total_num
+
+    return test_true_num / test_total_num, test_true_man / test_total_man, test_true_woman / test_total_woman
 
 
 def get_transform(image_size):
