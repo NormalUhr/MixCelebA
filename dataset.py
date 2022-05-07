@@ -256,7 +256,8 @@ class CelebABalance(Dataset):
             if self.transform != None:
                 img = self.transform(img)
             label = int(file[self.split]['label'][self.indexes[index]][self.y_index])
-        return img, label
+            label_z = int(file[self.split]['label'][self.indexes[index]][self.a_index])
+        return img, (label, label_z)
 
 
 if __name__ == '__main__':
