@@ -217,12 +217,12 @@ class CelebABalance(Dataset):
         self.root = root
         self.split = split
         self.transform = transform
-        # self.target_attr = bytes(target_attr, 'utf-8')
-        self.target_attr = target_attr
+        self.target_attr = bytes(target_attr, 'utf-8')
+        # self.target_attr = target_attr
         self.gaussian_variance = gaussian_variance
         with h5py.File(self.root, mode='r') as file:
             self.y_index = np.where(np.array(file["columns"]) == self.target_attr)[0][0]
-            self.a_index = np.where(np.array(file["columns"]) == "Male")[0][0]
+            self.a_index = np.where(np.array(file["columns"]) == b"Male")[0][0]
             labels = file[split]["label"][:, self.a_index] * 2 + file[split]["label"][:, self.y_index]
         indexes = [np.where(labels == i)[0] for i in range(4)]
         base_zero_min_idx = np.argmin(np.array([(labels == i).sum() for i in range(2)]))
