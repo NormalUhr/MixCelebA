@@ -41,8 +41,6 @@ def get_one_hot(y, num_class, device):
 def evaluation(test_loader, predictor, epoch, device):
     predictor.eval()
     pbar = tqdm(test_loader, total=len(test_loader), ncols=120, desc="Testing")
-    y_all = []
-    d_all = []
     test_total_num = 0
     test_true_num = 0
     test_total_man = 0
@@ -50,10 +48,9 @@ def evaluation(test_loader, predictor, epoch, device):
     test_true_man = 0
     test_true_woman = 0
     for x, (y, d) in pbar:
-        y_all.append(y)
-        d_all.append(d)
         x = x.to(device)
         y = y.to(device)
+        d = d.to(device)
         with torch.no_grad():
             lgt = predictor(x)
         test_total_num += y.shape[0]
