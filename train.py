@@ -116,7 +116,7 @@ def main(args):
     if args.evaluate:
         print("================= Evaluating on Test Set before Training =================")
         accuracy, acc_man, acc_woman = evaluation(test_loader, predictor, -1, device)
-        print("The accuracy is {:.2f}, {:.2f}, {:.2f}".format(accuracy, acc_man, acc_woman))
+        print("The accuracy is {:.4f}, {:.4f}, {:.4f}".format(accuracy, acc_man, acc_woman))
         if args.evaluate:
             sys.exit()
 
@@ -152,8 +152,8 @@ def main(args):
             total_num += y.size(0)
             true_num += (lgt.argmax(1) == y.view(-1)).type(torch.float).sum().detach().cpu().item()
             acc = true_num * 1.0 / total_num
-            pbar.set_description(f"Training Epoch {epoch} Acc {100 * acc:.2f}%")
-        pbar.set_description(f"Training Epoch {epoch} Acc {100 * true_num / total_num:.2f}%")
+            pbar.set_description(f"Training Epoch {epoch} Acc {100 * acc:.4f}%")
+        pbar.set_description(f"Training Epoch {epoch} Acc {100 * true_num / total_num:.4f}%")
 
         p_lr_scheduler.step()
 
@@ -177,11 +177,11 @@ def main(args):
             torch.save(cp,
                        os.path.join(os.path.join(args.result_dir, "checkpoints"), f'{model_attr_name}_best.pth.tar'))
 
-        print("The acc is {:.2f}, {:.2f}, {:.2f}".format(best_SA, acc_best_man, acc_best_woman))
+        print("The acc is {:.4f}, {:.4f}, {:.4f}".format(best_SA, acc_best_man, acc_best_woman))
 
         print(f"Time Consumption for one epoch is {time.time() - end}s")
 
-    print("The final acc is {:.2f}, {:.2f}, {:.2f}".format(best_SA, acc_best_man, acc_best_woman))
+    print("The final acc is {:.4f}, {:.4f}, {:.4f}".format(best_SA, acc_best_man, acc_best_woman))
 
 
 if __name__ == '__main__':
