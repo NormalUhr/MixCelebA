@@ -47,9 +47,9 @@ def main(args):
                        transform=transform_test, split="train")
     train_loader = DataLoader(train_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=True)
 
+    print("===========================> Train Set <===========================")
     pbar = tqdm(train_loader, total=len(train_loader), ncols=120, desc="Testing")
 
-    print("===========================> Train Set <===========================")
     stat = {0: 0, 1: 1}
     stat_z = {0: 0, 1: 1}
     stat_cross = [0, 0, 0, 0]
@@ -70,14 +70,13 @@ def main(args):
     print("Cross")
     print(stat_cross)
 
-
     test_set = CelebA(root=args.data_dir, target_attr=args.target_attrs,
                       transform=transform_test, split="test")
     test_loader = DataLoader(test_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=True)
 
-    pbar = tqdm(test_loader, total=len(test_loader), ncols=120, desc="Testing")
-
     print("===========================> Test Set <===========================")
+
+    pbar = tqdm(test_loader, total=len(test_loader), ncols=120, desc="Testing")
     stat = {0: 0, 1: 1}
     stat_z = {0: 0, 1: 1}
     stat_cross = [0, 0, 0, 0]
@@ -86,7 +85,7 @@ def main(args):
             stat[i] += (y == i).sum().detach().item()
             stat_z[i] += (d == i).sum().detach().item()
             for j in range(2):
-                stat_cross[i * 2 + j - 1] += (y == i & d == i).sum().detach().item()
+                stat_cross[i * 2 + j - 1] += ((y == i & d == j).sum().detach().item())
     print(args.target_attrs)
     print(stat)
     print(f"ratio: {stat[0] / (stat[0] + stat[1])} : {stat[1] / (stat[0] + stat[1])} = {stat[0] / stat[1]}")
