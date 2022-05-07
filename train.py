@@ -45,8 +45,8 @@ def get_args():
     parser.add_argument('--arch', type=str, default="resnet18", choices=["resnet18", "resnet20s", "resnet9"])
     parser.add_argument('--evaluate', action="store_true")
 
-    parser.add_argument('--gv', default=0.05, help="Gaussian Noise", choices=[0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3])
-    parser.add_argument('--gr', default=0.1, choices=[0.1, 0.3, 0.5])
+    parser.add_argument('--gv', type=float, default=0.05, help="Gaussian Noise", choices=[0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3])
+    parser.add_argument('--gr', type=float, default=0.1, choices=[0.1, 0.3, 0.5])
 
     args = parser.parse_args()
 
