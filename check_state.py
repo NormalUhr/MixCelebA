@@ -31,7 +31,7 @@ def get_args():
     parser.add_argument('--batch-size', type=int, default=2048)
     parser.add_argument('--num-workers', type=int, default=8)
     parser.add_argument('--gr', type=float, default=0.1)
-    parser.add_argument('--base-ratio', type=float, default=0.25)
+    parser.add_argument('--base-ratio', type=float, default=4)
 
     args = parser.parse_args()
 
