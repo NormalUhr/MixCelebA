@@ -229,15 +229,14 @@ class CelebABalance(Dataset):
         base_zero_min_idx = np.argmin(np.array([(labels == i).sum() for i in range(2)]))
         base_one_min_idx = np.argmin(np.array([(labels == i).sum() for i in range(2, 4)])) + 2
 
-        total_min_idx = len(indexes[base_one_min_idx])
-        gaussian_sample = random.sample(range(total_min_idx), int(gaussian_aug_ratio * total_min_idx))
-
         if len(indexes[base_zero_min_idx]) > len(indexes[base_one_min_idx]) * base_ratio:
             indexes[5 - base_one_min_idx] = indexes[5 - base_one_min_idx][:len(indexes[base_one_min_idx])]
             indexes[0] = indexes[0][:int(len(indexes[base_one_min_idx]) * base_ratio)]
             indexes[1] = indexes[1][:int(len(indexes[base_one_min_idx]) * base_ratio)]
             # indexes.append(indexes[2][:int(len(indexes[base_one_min_idx]) * gaussian_aug_ratio)])
             # indexes.append(indexes[3][:int(len(indexes[base_one_min_idx]) * gaussian_aug_ratio)])
+            total_min_idx = len(indexes[base_one_min_idx])
+            gaussian_sample = random.sample(range(total_min_idx), int(gaussian_aug_ratio * total_min_idx))
             indexes.append(indexes[2][gaussian_sample])
             indexes.append(indexes[3][gaussian_sample])
         else:
@@ -246,6 +245,8 @@ class CelebABalance(Dataset):
             indexes[3] = indexes[3][:int(len(indexes[base_zero_min_idx]) / base_ratio)]
             # indexes.append(indexes[2][:int(int(len(indexes[base_zero_min_idx]) / base_ratio) * gaussian_aug_ratio)])
             # indexes.append(indexes[3][:int(int(len(indexes[base_zero_min_idx]) / base_ratio) * gaussian_aug_ratio)])
+            total_min_idx = len(indexes[base_zero_min_idx])
+            gaussian_sample = random.sample(range(total_min_idx), int(gaussian_aug_ratio * total_min_idx))
             indexes.append(indexes[2][gaussian_sample])
             indexes.append(indexes[3][gaussian_sample])
         self.aug_cutpoint = sum([len(indexes[i]) for i in range(4)])
