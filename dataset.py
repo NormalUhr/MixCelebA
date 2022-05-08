@@ -218,12 +218,14 @@ class CelebABalance(Dataset):
         self.root = root
         self.split = split
         self.transform = transform
+        self.target_attr = target_attr
+        self.domain_attr = "Male"
         self.target_attr = bytes(target_attr, 'utf-8')
-        # self.target_attr = target_attr
+        self.domain_attr = bytes(self.domain_attr, 'utf-8')
         self.gaussian_variance = gaussian_variance
         with h5py.File(self.root, mode='r') as file:
             self.y_index = np.where(np.array(file["columns"]) == self.target_attr)[0][0]
-            self.a_index = np.where(np.array(file["columns"]) == b"Male")[0][0]
+            self.a_index = np.where(np.array(file["columns"]) == self.domain_attr)[0][0]
             labels = file[split]["label"][:, self.a_index] * 2 + file[split]["label"][:, self.y_index]
         indexes = [np.where(labels == i)[0] for i in range(4)]
         base_zero_min_idx = np.argmin(np.array([(labels == i).sum() for i in range(2)]))
@@ -245,7 +247,7 @@ class CelebABalance(Dataset):
             indexes[3] = indexes[3][:int(len(indexes[base_zero_min_idx]) / base_ratio)]
             # indexes.append(indexes[2][:int(int(len(indexes[base_zero_min_idx]) / base_ratio) * gaussian_aug_ratio)])
             # indexes.append(indexes[3][:int(int(len(indexes[base_zero_min_idx]) / base_ratio) * gaussian_aug_ratio)])
-            total_min_idx = len(indexes[base_zero_min_idx])
+            total_min_idx = int(len(indexes[base_zero_min_idx]) / base_ratio)
             gaussian_sample = random.sample(range(total_min_idx), int(gaussian_aug_ratio * total_min_idx))
             indexes.append(indexes[2][gaussian_sample])
             indexes.append(indexes[3][gaussian_sample])
@@ -303,6 +305,6 @@ if __name__ == '__main__':
     # for (img, (label, domain)) in tqdm(loader):
     #     pass
 
-    D = CelebABalance(f"../data/celeba/celeba.hdf5")
+    D = CelebABalance(f"../data/celeba/celeba.hdf5", gaussian_aug_ratio=0.5)
     print(len(D), D.aug_cutpoint)
     print(D.__getitem__(106654)[0].shape)
