@@ -212,7 +212,7 @@ class CelebAFast(Dataset):
 
 
 class CelebABalance(Dataset):
-    def __init__(self, root, split='train', transform=None, base_ratio=4, gaussian_aug_ratio=0.1,
+    def __init__(self, root, split='train', transform=None, num = None, base_ratio=4, gaussian_aug_ratio=0.1,
                  gaussian_variance=.1, target_attr="High_Cheekbones") -> None:
         super().__init__()
         self.root = root
@@ -231,26 +231,17 @@ class CelebABalance(Dataset):
         base_zero_min_idx = np.argmin(np.array([(labels == i).sum() for i in range(2)]))
         base_one_min_idx = np.argmin(np.array([(labels == i).sum() for i in range(2, 4)])) + 2
 
-        if len(indexes[base_zero_min_idx]) > len(indexes[base_one_min_idx]) * base_ratio:
-            indexes[5 - base_one_min_idx] = indexes[5 - base_one_min_idx][:len(indexes[base_one_min_idx])]
-            indexes[0] = indexes[0][:int(len(indexes[base_one_min_idx]) * base_ratio)]
-            indexes[1] = indexes[1][:int(len(indexes[base_one_min_idx]) * base_ratio)]
-            # indexes.append(indexes[2][:int(len(indexes[base_one_min_idx]) * gaussian_aug_ratio)])
-            # indexes.append(indexes[3][:int(len(indexes[base_one_min_idx]) * gaussian_aug_ratio)])
-            total_min_idx = len(indexes[base_one_min_idx])
-            gaussian_sample = random.sample(range(total_min_idx), int(gaussian_aug_ratio * total_min_idx))
-            indexes.append(indexes[2][gaussian_sample])
-            indexes.append(indexes[3][gaussian_sample])
-        else:
-            indexes[1 - base_zero_min_idx] = indexes[1 - base_zero_min_idx][:len(indexes[base_zero_min_idx])]
-            indexes[2] = indexes[2][:int(len(indexes[base_zero_min_idx]) / base_ratio)]
-            indexes[3] = indexes[3][:int(len(indexes[base_zero_min_idx]) / base_ratio)]
-            # indexes.append(indexes[2][:int(int(len(indexes[base_zero_min_idx]) / base_ratio) * gaussian_aug_ratio)])
-            # indexes.append(indexes[3][:int(int(len(indexes[base_zero_min_idx]) / base_ratio) * gaussian_aug_ratio)])
-            total_min_idx = int(len(indexes[base_zero_min_idx]) / base_ratio)
-            gaussian_sample = random.sample(range(total_min_idx), int(gaussian_aug_ratio * total_min_idx))
-            indexes.append(indexes[2][gaussian_sample])
-            indexes.append(indexes[3][gaussian_sample])
+        total_min = len(indexes[base_one_min_idx]) if len(indexes[base_zero_min_idx]) > len(indexes[base_one_min_idx]) * base_ratio else int(len(indexes[base_zero_min_idx]) / base_ratio)
+        if num is not None:
+            assert num < (total_min * (base_ratio + 1)) * 2, "No Enough Data, Lower The Total Num"
+            total_min = num // (base_ratio + 1)
+        indexes[0] = indexes[0][:int(total_min * base_ratio)]
+        indexes[1] = indexes[1][:int(total_min * base_ratio)]
+        indexes[2] = indexes[2][:total_min]
+        indexes[3] = indexes[3][:total_min]
+        gaussian_sample = random.sample(range(total_min), int(gaussian_aug_ratio * total_min))
+        indexes.append(indexes[2][gaussian_sample])
+        indexes.append(indexes[3][gaussian_sample])
         self.aug_cutpoint = sum([len(indexes[i]) for i in range(4)])
         self.indexes = np.concatenate(indexes)
 
