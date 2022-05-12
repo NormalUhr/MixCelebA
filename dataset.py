@@ -212,7 +212,7 @@ class CelebAFast(Dataset):
 
 
 class CelebABalance(Dataset):
-    def __init__(self, root, split='train', transform=None, num = None, base_ratio=4, gaussian_aug_ratio=0.1,
+    def __init__(self, root, split='train', transform=None, num=None, base_ratio=4, gaussian_aug_ratio=0.1,
                  gaussian_variance=.1, target_attr="High_Cheekbones") -> None:
         super().__init__()
         self.root = root
@@ -233,6 +233,7 @@ class CelebABalance(Dataset):
 
         total_min = len(indexes[base_one_min_idx]) if len(indexes[base_zero_min_idx]) > len(indexes[base_one_min_idx]) * base_ratio else int(len(indexes[base_zero_min_idx]) / base_ratio)
         if num is not None:
+            num = int(num / 2)
             assert num < (total_min * (base_ratio + 1)) * 2, "No Enough Data, Lower The Total Num"
             total_min = num // (base_ratio + 1)
         indexes[0] = indexes[0][:int(total_min * base_ratio)]

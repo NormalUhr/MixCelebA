@@ -27,11 +27,11 @@ def get_args():
     parser.add_argument('--data-dir', type=str, default="../data/celeba/celeba.hdf5")
     parser.add_argument('--domain-attrs', type=str, default='Male')
     parser.add_argument('--target-attrs', type=str, default='Blond_Hair')
-    parser.add_argument('--exp-name', type=str, default=None)
     parser.add_argument('--batch-size', type=int, default=2048)
     parser.add_argument('--num-workers', type=int, default=8)
-    parser.add_argument('--gr', type=float, default=0.1)
+    parser.add_argument('--gr', type=float, default=0.0)
     parser.add_argument('--base-ratio', type=float, default=4)
+    parser.add_argument('--total-num', type=int, default=None)
 
     args = parser.parse_args()
 
@@ -43,7 +43,7 @@ def main(args):
 
     transform_train, transform_test = get_transform(image_size=image_size)
 
-    train_set = CelebA(root=args.data_dir, target_attr=args.target_attrs,
+    train_set = CelebA(root=args.data_dir, target_attr=args.target_attrs, num=args.total_num,
                        transform=transform_test, split="train", gaussian_aug_ratio=args.gr, base_ratio=args.base_ratio)
     train_loader = DataLoader(train_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=True)
 

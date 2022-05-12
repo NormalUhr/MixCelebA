@@ -44,6 +44,7 @@ def get_args():
     parser.add_argument('--num-workers', type=int, default=8)
     parser.add_argument('--arch', type=str, default="resnet18", choices=["resnet18", "resnet20s", "resnet9"])
     parser.add_argument('--evaluate', action="store_true")
+    parser.add_argument('--total-num', default=None, type=int)
 
     parser.add_argument('--gv', type=float, default=0.05, help="Gaussian Noise")
     parser.add_argument('--gr', type=float, default=0.1)
@@ -71,6 +72,8 @@ def main(args):
     model_attr_name += str(attr_dict[args.target_attrs]) + "_"
     model_attr_name += f'seed{args.seed}'
     model_attr_name += f'_gr{args.gr}_gv{args.gv}'
+    if args.total_num is not None:
+        model_attr_name += f"_num{args.total_num}"
     if args.exp_name is not None:
         model_attr_name += f'_{args.exp_name}'
 
@@ -121,6 +124,7 @@ def main(args):
             sys.exit()
 
     train_set = CelebA(root=args.data_dir, target_attr=args.target_attrs, gaussian_aug_ratio=args.gr,
+                       num=args.total_num,
                        gaussian_variance=args.gv,
                        transform=transform_train, split="train")
     train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers,
