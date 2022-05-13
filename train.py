@@ -48,6 +48,7 @@ def get_args():
 
     parser.add_argument('--gv', type=float, default=0.05, help="Gaussian Noise")
     parser.add_argument('--gr', type=float, default=0.1)
+    parser.add_argument('--minor-ratio', type=float, default=0.2, help="the ratio of minority group")
 
     args = parser.parse_args()
 
@@ -125,6 +126,7 @@ def main(args):
 
     train_set = CelebA(root=args.data_dir, target_attr=args.target_attrs, gaussian_aug_ratio=args.gr,
                        num=args.total_num,
+                       base_ratio=(1-args.minor_ratio) / args.minor_ratio,
                        gaussian_variance=args.gv,
                        transform=transform_train, split="train")
     train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers,
