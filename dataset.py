@@ -220,8 +220,8 @@ class CelebABalance(Dataset):
         self.transform = transform
         self.target_attr = target_attr
         self.domain_attr = "Male"
-        self.target_attr = bytes(target_attr, 'utf-8')
-        self.domain_attr = bytes(self.domain_attr, 'utf-8')
+        # self.target_attr = bytes(target_attr, 'utf-8')
+        # self.domain_attr = bytes(self.domain_attr, 'utf-8')
         self.gaussian_variance = gaussian_variance
         with h5py.File(self.root, mode='r') as file:
             self.y_index = np.where(np.array(file["columns"]) == self.target_attr)[0][0]

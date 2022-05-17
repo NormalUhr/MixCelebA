@@ -114,7 +114,7 @@ def main(args):
             acc_best_woman = checkpoint["acc_best_woman"]
             start_epoch = checkpoint["epoch"]
     test_set = CelebA(root=args.data_dir, target_attr=args.target_attrs,
-                      transform=transform_test, split="test", gaussian_aug_ratio=0.0)
+                      transform=transform_test, split="test", gaussian_aug_ratio=0.0, base_ratio=1.0)
     test_loader = DataLoader(test_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=True)
 
     if args.evaluate:
