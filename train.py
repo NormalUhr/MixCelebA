@@ -45,7 +45,7 @@ def get_args():
     parser.add_argument('--arch', type=str, default="resnet18", choices=["resnet18", "resnet20s", "resnet9"])
     parser.add_argument('--evaluate', action="store_true")
     parser.add_argument('--total-num', default=5000, type=int)
-    parser.add_argument('--test-total-num', default=1000, type=int)
+    parser.add_argument('--test-num', default=1000, type=int)
 
     parser.add_argument('--gv', type=float, default=0.05, help="Gaussian Noise")
     parser.add_argument('--gr', type=float, default=0.1)
@@ -73,10 +73,13 @@ def main(args):
     os.makedirs(os.path.join(args.result_dir, "csv"), exist_ok=True)
     model_attr_name = args.arch + "_" + "_target_"
     model_attr_name += str(attr_dict[args.target_attrs]) + "_"
+    model_attr_name += args.add_aug + "_"
     model_attr_name += f'seed{args.seed}'
     model_attr_name += f'_gr{args.gr}_gv{args.gv}'
     if args.total_num is not None:
         model_attr_name += f"_num{args.total_num}"
+    if args.test_num is not None:
+        model_attr_name += f"_test{args.test_num}"
     if args.exp_name is not None:
         model_attr_name += f'_{args.exp_name}'
 
@@ -117,7 +120,7 @@ def main(args):
             start_epoch = checkpoint["epoch"]
     test_set = CelebA(root=args.data_dir, target_attr=args.target_attrs,
                       transform=transform_test, split="test", add_aug_ratio=0.0, base_ratio=1.0,
-                      num=args.test_total_num)
+                      num=args.test_num)
     test_loader = DataLoader(test_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=True)
 
     if args.evaluate:
