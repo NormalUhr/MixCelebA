@@ -277,7 +277,6 @@ class CelebABalance(Dataset):
                     self.add_aug_mag = int(self.add_aug_mag)
                     add_aug = Compose([RandomCrop(self.add_aug_mag), Resize(224)])
                     img = add_aug(img)
-                    raise NotImplementedError
                 else:
                     self.add_aug_mag = int(self.add_aug_mag)
                     add_aug = RandomRotation(self.add_aug_mag)
