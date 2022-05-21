@@ -6,7 +6,7 @@ import pandas
 import torch
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
-from torchvision.transforms import ToTensor
+from torchvision.transforms import ToTensor, RandomCrop, RandomRotation, Compose, Resize
 from tqdm import tqdm
 import random
 
@@ -212,9 +212,23 @@ class CelebAFast(Dataset):
 
 
 class CelebABalance(Dataset):
-    def __init__(self, root, split='train', transform=None, num=None, base_ratio=4, gaussian_aug_ratio=0.1,
-                 gaussian_variance=.1, target_attr="High_Cheekbones") -> None:
+    def __init__(self, root, split='train', transform=None, num=None, base_ratio=4, add_aug_ratio=0.1,
+                 add_aug_mag=.1, target_attr="High_Cheekbones", add_aug="rotation") -> None:
+        """
+
+        :param root:
+        :param split:
+        :param transform:
+        :param num:
+        :param base_ratio:
+        :param add_aug_ratio:
+        :param add_aug: [rotation, angle, crop]
+        :param add_aug_mag: the magnitude for the additional augmentation. For rotation, max angle (-angle, angle); for crop, the remaining size; for gaussian noise, the variance.
+        :param target_attr:
+        """
         super().__init__()
+        assert add_aug in ["gaussian", "rotation", "crop"]
+        self.add_aug = add_aug
         self.root = root
         self.split = split
         self.transform = transform
@@ -222,7 +236,7 @@ class CelebABalance(Dataset):
         self.domain_attr = "Male"
         self.target_attr = bytes(target_attr, 'utf-8')
         self.domain_attr = bytes(self.domain_attr, 'utf-8')
-        self.gaussian_variance = gaussian_variance
+        self.add_aug_mag = add_aug_mag
         with h5py.File(self.root, mode='r') as file:
             self.y_index = np.where(np.array(file["columns"]) == self.target_attr)[0][0]
             self.a_index = np.where(np.array(file["columns"]) == self.domain_attr)[0][0]
@@ -240,7 +254,7 @@ class CelebABalance(Dataset):
         indexes[1] = indexes[1][:int(total_min * base_ratio)]
         indexes[2] = indexes[2][:total_min]
         indexes[3] = indexes[3][:total_min]
-        gaussian_sample = random.sample(range(total_min), int(gaussian_aug_ratio * total_min))
+        gaussian_sample = random.sample(range(total_min), int(add_aug_ratio * total_min))
         indexes.append(indexes[2][gaussian_sample])
         indexes.append(indexes[3][gaussian_sample])
         self.aug_cutpoint = sum([len(indexes[i]) for i in range(4)])
@@ -254,10 +268,20 @@ class CelebABalance(Dataset):
     def __getitem__(self, index):
         with h5py.File(self.root, mode='r') as file:
             img = torch.Tensor(file[self.split]['data'][self.indexes[index]] / 255.).permute(2, 0, 1)
-            if index >= self.aug_cutpoint:
-                img += torch.randn_like(img) * np.sqrt(self.gaussian_variance)
             if self.transform != None:
                 img = self.transform(img)
+            if index >= self.aug_cutpoint:
+                if self.add_aug == "gaussian":
+                    img += torch.randn_like(img) * np.sqrt(self.add_aug_mag)
+                elif self.add_aug == "crop":
+                    self.add_aug_mag = int(self.add_aug_mag)
+                    add_aug = Compose([RandomCrop(self.add_aug_mag), Resize(224)])
+                    img = add_aug(img)
+                    raise NotImplementedError
+                else:
+                    self.add_aug_mag = int(self.add_aug_mag)
+                    add_aug = RandomRotation(self.add_aug_mag)
+                    img = add_aug(img)
             label = int(file[self.split]['label'][self.indexes[index]][self.y_index])
             label_z = int(file[self.split]['label'][self.indexes[index]][self.a_index])
         return img, (label, label_z)
@@ -297,6 +321,6 @@ if __name__ == '__main__':
     # for (img, (label, domain)) in tqdm(loader):
     #     pass
 
-    D = CelebABalance(f"../data/celeba/celeba.hdf5", gaussian_aug_ratio=0.5)
+    D = CelebABalance(f"../data/celeba/celeba.hdf5", add_aug_ratio=0.5)
     print(len(D), D.aug_cutpoint)
     print(D.__getitem__(106654)[0].shape)

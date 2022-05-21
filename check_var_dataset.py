@@ -30,7 +30,7 @@ if __name__ == "__main__":
     transform_train, transform_test = get_transform(image_size=224)
 
     train_set = CelebA(root=args.data_dir, target_attr=args.target_attrs,
-                       transform=transform_test, split="train", gaussian_aug_ratio=args.gr, base_ratio=args.base_ratio)
+                       transform=transform_test, split="train", add_aug_ratio=args.gr, base_ratio=args.base_ratio)
     train_loader = DataLoader(train_set, batch_size=len(train_set), num_workers=args.num_workers, pin_memory=True)
 
     print(len(train_set))

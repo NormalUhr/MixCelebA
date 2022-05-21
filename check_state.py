@@ -30,8 +30,10 @@ def get_args():
     parser.add_argument('--batch-size', type=int, default=2048)
     parser.add_argument('--num-workers', type=int, default=8)
     parser.add_argument('--gr', type=float, default=0.0)
+    parser.add_argument('--gv', type=float, default=200.0)
     parser.add_argument('--base-ratio', type=float, default=4)
-    parser.add_argument('--total-num', type=int, default=None)
+    parser.add_argument('--total-num', type=int, default=5000)
+    parser.add_argument('--add-aug', type=str, default="crop", choices=["rotation", "crop", "gaussian"])
 
     args = parser.parse_args()
 
@@ -44,7 +46,8 @@ def main(args):
     transform_train, transform_test = get_transform(image_size=image_size)
 
     train_set = CelebA(root=args.data_dir, target_attr=args.target_attrs, num=args.total_num,
-                       transform=transform_test, split="train", gaussian_aug_ratio=args.gr, base_ratio=args.base_ratio)
+                       transform=transform_test, split="train", add_aug_ratio=args.gr, base_ratio=args.base_ratio, add_aug=args.add_aug,
+                       add_aug_mag=args.gv)
     train_loader = DataLoader(train_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=True)
 
     print("===========================> Train Set <===========================")
@@ -71,7 +74,7 @@ def main(args):
     print(stat_cross)
 
     test_set = CelebA(root=args.data_dir, target_attr=args.target_attrs,
-                      transform=transform_test, split="test", gaussian_aug_ratio=0.0, base_ratio=args.base_ratio)
+                      transform=transform_test, split="test", add_aug_ratio=0.0, base_ratio=args.base_ratio)
     test_loader = DataLoader(test_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=True)
 
     print("===========================> Test Set <===========================")

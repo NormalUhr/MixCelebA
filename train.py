@@ -44,11 +44,13 @@ def get_args():
     parser.add_argument('--num-workers', type=int, default=8)
     parser.add_argument('--arch', type=str, default="resnet18", choices=["resnet18", "resnet20s", "resnet9"])
     parser.add_argument('--evaluate', action="store_true")
-    parser.add_argument('--total-num', default=None, type=int)
+    parser.add_argument('--total-num', default=5000, type=int)
+    parser.add_argument('--test-total-num', default=1000, type=int)
 
     parser.add_argument('--gv', type=float, default=0.05, help="Gaussian Noise")
     parser.add_argument('--gr', type=float, default=0.1)
     parser.add_argument('--minor-ratio', type=float, default=0.2, help="the ratio of minority group")
+    parser.add_argument('--add-aug', type=str, default="rotation", choices=["rotation", "crop", "gaussian"])
 
     args = parser.parse_args()
 
@@ -114,7 +116,8 @@ def main(args):
             acc_best_woman = checkpoint["acc_best_woman"]
             start_epoch = checkpoint["epoch"]
     test_set = CelebA(root=args.data_dir, target_attr=args.target_attrs,
-                      transform=transform_test, split="test", gaussian_aug_ratio=0.0, base_ratio=1.0)
+                      transform=transform_test, split="test", add_aug_ratio=0.0, base_ratio=1.0,
+                      num=args.test_total_num)
     test_loader = DataLoader(test_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=True)
 
     if args.evaluate:
@@ -124,10 +127,11 @@ def main(args):
         if args.evaluate:
             sys.exit()
 
-    train_set = CelebA(root=args.data_dir, target_attr=args.target_attrs, gaussian_aug_ratio=args.gr,
+    train_set = CelebA(root=args.data_dir, target_attr=args.target_attrs, add_aug_ratio=args.gr,
                        num=args.total_num,
                        base_ratio=(1-args.minor_ratio) / args.minor_ratio,
-                       gaussian_variance=args.gv,
+                       add_aug_mag=args.gv,
+                       add_aug=args.add_aug,
                        transform=transform_train, split="train")
     train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers,
                               pin_memory=True)

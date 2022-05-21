@@ -36,7 +36,7 @@ def get_args():
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--wd', type=float, default=2e-5)
     parser.add_argument('--epochs', type=int, default=20)
-    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--seed', type=int, default=2)
     parser.add_argument('--num-workers', type=int, default=8)
     parser.add_argument('--arch', type=str, default="resnet18", choices=["resnet18", "resnet20s", "resnet9"])
     parser.add_argument('--evaluate', action="store_true")
@@ -56,7 +56,7 @@ def get_args():
 
 def main(args):
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    setup_seed(args.seed)
+    # setup_seed(args.seed)
 
     # Sanity Check!
     assert args.data_dir is not None
@@ -67,7 +67,7 @@ def main(args):
     num_class = 2
 
     test_set = CelebA(root=args.data_dir, target_attr=args.target_attrs,
-                      transform=transform_test, split="test", gaussian_aug_ratio=0.0)
+                      transform=transform_test, split="test", add_aug_ratio=0.0)
     test_loader = DataLoader(test_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=True, shuffle=True)
 
     pbar = tqdm(test_loader, total=len(test_loader), ncols=120)
