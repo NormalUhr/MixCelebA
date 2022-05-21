@@ -1,0 +1,1 @@
+for seed in 2022 2021 2020; do for gr in 0.5 0.3 0.1; do for gv in 0 30 60 90 120 150 180; do python3 train.py --arch resnet9 --data-dir /data/yihua/dataset/celeba/celeba.hdf5 --target-attrs Blond_Hair --gv ${gv} --gr ${gr} --seed ${seed} --result-dir rotation_study --add-aug rotation | tee log/resnet9_BlondHair_Rotation_gv${gv}_gr${gr}_seed${seed}.log; done; done; done
