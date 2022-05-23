@@ -187,8 +187,8 @@ def main(args):
                   "acc_best_man": acc_best_man,
                   "acc_best_woman": acc_best_woman
                   }
-            torch.save(cp,
-                       os.path.join(os.path.join(args.result_dir, "checkpoints"), f'{model_attr_name}_best.pth.tar'))
+            # torch.save(cp,
+            #            os.path.join(os.path.join(args.result_dir, "checkpoints"), f'{model_attr_name}_best.pth.tar'))
 
         print("The acc is {:.4f}, {:.4f}, {:.4f}".format(best_SA, acc_best_man, acc_best_woman))
 
