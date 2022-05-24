@@ -1,0 +1,13 @@
+Namespace(data_dir='/data/yihua/dataset/celeba/celeba.hdf5', result_dir='results', checkpoint=None, resume=False, domain_attrs='Male', target_attrs='High_Cheekbones', exp_name=None, batch_size=512, lr=0.0001, wd=2e-05, epochs=20, seed=2021, num_workers=8, arch='resnet9', evaluate=False, gv=0.3, gr=0.5)
+======================================= Epoch 0 =======================================
+================= Test Set =================
++++++++++++ Find New Best Min ACC +++++++++++
+The acc is 0.8098, 0.7694, 0.8199
+Time Consumption for one epoch is 140.65812230110168s
+======================================= Epoch 1 =======================================
+================= Test Set =================
++++++++++++ Find New Best Min ACC +++++++++++
+The acc is 0.8602, 0.8115, 0.8723
+Time Consumption for one epoch is 139.42204928398132s
+======================================= Epoch 2 =======================================
+================= Test Set =================
