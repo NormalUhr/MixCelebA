@@ -66,8 +66,12 @@ def evaluation(test_loader, predictor, epoch, device):
         test_total_woman += (d == 0).type(torch.float).sum().detach().cpu().item()
         pred = lgt.argmax(1)
         test_total_loss += (nn.functional.cross_entropy(lgt, y_one_hot) * y.shape[0]).detach().cpu().item()
-        test_loss_man += (nn.functional.cross_entropy(lgt_man, y_man_one_hot) * y[d == 1].shape[0]).detach().cpu().item()
-        test_loss_woman += (nn.functional.cross_entropy(lgt_woman, y_woman_one_hot) * y[d == 0].shape[0]).detach().cpu().item()
+        if y[d == 1].shape[0] > 0:
+            test_loss_man += (
+                        nn.functional.cross_entropy(lgt_man, y_man_one_hot) * y[d == 1].shape[0]).detach().cpu().item()
+        if y[d == 0].shape[0] > 0:
+            test_loss_woman += (nn.functional.cross_entropy(lgt_woman, y_woman_one_hot) * y[d == 0].shape[
+                0]).detach().cpu().item()
         test_true_num += (pred == y.view(-1)).type(torch.float).sum().detach().cpu().item()
         test_true_man += ((pred == y.view(-1)).view(-1) * (d == 1).view(-1)).type(torch.float).sum().detach().cpu().item()
         test_true_woman += ((pred == y.view(-1)).view(-1) * (d == 0).view(-1)).type(torch.float).sum().detach().cpu().item()
