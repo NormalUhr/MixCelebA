@@ -107,6 +107,9 @@ def main(args):
     best_SA = 0.0
     acc_best_man = 0.0
     acc_best_woman = 0.0
+    best_loss = 0.0
+    loss_best_man = 0.0
+    loss_best_woman = 0.0
     start_epoch = 0
     if args.checkpoint is not None:
         checkpoint = torch.load(args.checkpoint, map_location=device)
@@ -171,7 +174,7 @@ def main(args):
         p_lr_scheduler.step()
 
         print("================= Test Set =================")
-        accuracy, acc_man, acc_woman = evaluation(test_loader, predictor, epoch, device)
+        accuracy, acc_man, acc_woman, loss, loss_man, loss_woman = evaluation(test_loader, predictor, epoch, device)
 
         metric = accuracy
         if metric > best_SA:
@@ -179,6 +182,9 @@ def main(args):
             best_SA = metric
             acc_best_man = acc_man
             acc_best_woman = acc_woman
+            best_loss = loss
+            loss_best_man = loss_man
+            loss_best_woman = loss_woman
             cp = {"predictor": predictor.state_dict(),
                   "p_optim": p_optim.state_dict(),
                   "p_lr_scheduler": p_lr_scheduler.state_dict(),
@@ -190,11 +196,15 @@ def main(args):
             # torch.save(cp,
             #            os.path.join(os.path.join(args.result_dir, "checkpoints"), f'{model_attr_name}_best.pth.tar'))
 
-        print("The acc is {:.4f}, {:.4f}, {:.4f}".format(best_SA, acc_best_man, acc_best_woman))
+        print("The acc is {:.4f}, {:.4f}, {:.4f}".format(accuracy, acc_man, acc_woman))
+
+        print("The loss is {:.4f}, {:.4f}, {:.4f}".format(loss, loss_man, loss_woman))
 
         print(f"Time Consumption for one epoch is {time.time() - end}s")
 
     print("The final acc is {:.4f}, {:.4f}, {:.4f}".format(best_SA, acc_best_man, acc_best_woman))
+
+    print("The loss is {:.4f}, {:.4f}, {:.4f}".format(best_loss, loss_best_man, loss_best_woman))
 
 
 if __name__ == '__main__':
