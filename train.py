@@ -204,7 +204,7 @@ def main(args):
 
     print("The final acc is {:.4f}, {:.4f}, {:.4f}".format(best_SA, acc_best_man, acc_best_woman))
 
-    print("The loss is {:.4f}, {:.4f}, {:.4f}".format(best_loss, loss_best_man, loss_best_woman))
+    print("The final loss is {:.4f}, {:.4f}, {:.4f}".format(best_loss, loss_best_man, loss_best_woman))
 
 
 if __name__ == '__main__':
