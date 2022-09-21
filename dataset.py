@@ -212,19 +212,19 @@ class CelebAFast(Dataset):
 
 
 class CelebABalance(Dataset):
-    def __init__(self, root, split='train', transform=None, num=None, base_ratio=4, add_aug_ratio=0.1,
-                 add_aug_mag=.1, target_attr="High_Cheekbones", add_aug="rotation") -> None:
+    def __init__(self, root, split='train', transform=None, num=None, base_ratio=1, add_aug_ratio=0.1,
+                 add_aug_mag=.1, target_attr="Smiling", add_aug="rotation", domain_attr="Blond_Hair") -> None:
         """
-
-        :param root:
-        :param split:
-        :param transform:
-        :param num:
-        :param base_ratio:
-        :param add_aug_ratio:
-        :param add_aug: [rotation, angle, crop]
+        :param root: the path to the hdf5 file.
+        :param split: [train, val, test]
+        :param transform: the data transformation you want to use.
+        :param num: the number of the total data.
+        :param base_ratio: the ratio for the domain_attr, 1 for balance.
+        :param add_aug_ratio: the ratio of the additional augmented data. Set to 0 if you do not want any data.
+        :param add_aug: [rotation, angle, crop] The type of the augmentation.
         :param add_aug_mag: the magnitude for the additional augmentation. For rotation, max angle (-angle, angle); for crop, the remaining size; for gaussian noise, the variance.
-        :param target_attr:
+        :param target_attr: the target attribute you want to use. The target_attr is automatically balanced. The input must be in the list "attr_list" on the top of this file.
+        :param domain_attr: the domain attribute you want to use. The domain_attr is controlled by the param base_ratio.
         """
         super().__init__()
         assert add_aug in ["gaussian", "rotation", "crop"]
@@ -233,9 +233,13 @@ class CelebABalance(Dataset):
         self.split = split
         self.transform = transform
         self.target_attr = target_attr
-        self.domain_attr = "Male"
+        self.domain_attr = domain_attr
+
+        # In case of bug like: IndexError: index 0 is out of bounds for axis 0 with size 0
+        # Comment out the two lines below
         self.target_attr = bytes(target_attr, 'utf-8')
         self.domain_attr = bytes(self.domain_attr, 'utf-8')
+
         self.add_aug_mag = add_aug_mag
         with h5py.File(self.root, mode='r') as file:
             self.y_index = np.where(np.array(file["columns"]) == self.target_attr)[0][0]

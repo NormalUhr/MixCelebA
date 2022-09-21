@@ -25,14 +25,14 @@ insufficient_attr_list = '5_o_Clock_Shadow,Goatee,Mustache,Sideburns,Wearing_Nec
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-dir', type=str, default="../data/celeba/celeba.hdf5")
-    parser.add_argument('--domain-attrs', type=str, default='Male')
-    parser.add_argument('--target-attrs', type=str, default='Blond_Hair')
+    parser.add_argument('--domain-attrs', type=str, default='Blond_Hair')
+    parser.add_argument('--target-attrs', type=str, default='Smiling')
     parser.add_argument('--batch-size', type=int, default=2048)
     parser.add_argument('--num-workers', type=int, default=8)
     parser.add_argument('--gr', type=float, default=0.0)
     parser.add_argument('--gv', type=float, default=200.0)
     parser.add_argument('--base-ratio', type=float, default=4)
-    parser.add_argument('--total-num', type=int, default=5000)
+    parser.add_argument('--total-num', type=int, default=1000)
     parser.add_argument('--add-aug', type=str, default="crop", choices=["rotation", "crop", "gaussian"])
 
     args = parser.parse_args()
@@ -47,7 +47,7 @@ def main(args):
 
     train_set = CelebA(root=args.data_dir, target_attr=args.target_attrs, num=args.total_num,
                        transform=transform_test, split="train", add_aug_ratio=args.gr, base_ratio=args.base_ratio, add_aug=args.add_aug,
-                       add_aug_mag=args.gv)
+                       add_aug_mag=args.gv, domain_attr=args.domain_attrs)
     train_loader = DataLoader(train_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=True)
 
     print("===========================> Train Set <===========================")
@@ -66,7 +66,7 @@ def main(args):
     print(stat)
     print(f"ratio: {stat[0] / (stat[0] + stat[1])} : {stat[1] / (stat[0] + stat[1])} = {stat[0] / stat[1]}")
 
-    print("Male")
+    print(args.domain_attrs)
     print(stat_z)
     print(f"ratio: {stat_z[0] / (stat_z[0] + stat_z[1])} : {stat_z[1] / (stat_z[0] + stat_z[1])} = {stat_z[0] / stat_z[1]}")
 
