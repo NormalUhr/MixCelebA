@@ -69,11 +69,15 @@ class resnet9(nn.Module):
             ResidualBlock(in_channels=256, out_channels=256, kernel_size=3, stride=2, padding=1),
             nn.AdaptiveAvgPool2d(1),
             nn.Flatten(1),
-            nn.Linear(in_features=256, out_features=num_classes, bias=True)
         )
 
-    def forward(self, x):
-        out = self.conv(x)
+        self.linear = nn.Linear(in_features=256, out_features=num_classes, bias=True)
+
+    def forward(self, x, pena=False):
+        pena_out = self.conv(x)
+        out = self.linear(pena_out)
+        if pena:
+            return out, pena_out
         return out
 
 

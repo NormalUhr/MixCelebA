@@ -155,14 +155,17 @@ class ResNets(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x, pena=False):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
         out = F.avg_pool2d(out, out.size()[3])
-        out = out.view(out.size(0), -1)
-        out = self.fc(out)
+        pena_out = out.view(out.size(0), -1)
+
+        out = self.fc(pena_out)
+        if pena:
+            return out, pena_out
         return out
 
 

@@ -2,7 +2,6 @@ import argparse
 import os
 import time
 import sys
-from torch import nn
 from torch.utils.data import DataLoader
 from torchvision.models.resnet import resnet18
 from torch.cuda.amp import autocast, GradScaler
