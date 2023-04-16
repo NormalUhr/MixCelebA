@@ -6,7 +6,8 @@ import numpy as np
 import pandas
 import torch
 from PIL import Image
-from torch.utils.data import Dataset
+from torch.distributions import Bernoulli
+from torch.utils.data import Dataset, DataLoader
 from torchvision.transforms import RandomCrop, Resize, RandomRotation, Compose
 from torchvision.transforms import ToTensor
 from tqdm import tqdm
@@ -294,7 +295,7 @@ class CelebABalance(Dataset):
 
 class CelebAMultiBalance(Dataset):
     def __init__(self, root, split='train', transform=None, num=None, base_ratio=1, add_aug_ratio=0.1,
-                 add_aug_mag=.1, target_attrs=None, add_aug="rotation", domain_attr="Blond_Hair") -> None:
+                 add_aug_mag=.1, target_attrs=None, add_aug="rotation", domain_attr="Male") -> None:
         super().__init__()
         assert add_aug in ["gaussian", "rotation", "crop"]
         assert target_attrs is not None
@@ -306,6 +307,10 @@ class CelebAMultiBalance(Dataset):
         self.transform = transform
         self.target_attrs = [bytes(attr, 'utf-8') for attr in target_attrs]
         self.domain_attr = bytes(domain_attr, 'utf-8')
+
+        # For local debug
+        # self.target_attrs = target_attrs
+        # self.domain_attr = domain_attr
         self.add_aug_mag = add_aug_mag
 
         with h5py.File(self.root, mode='r') as file:
@@ -321,27 +326,31 @@ class CelebAMultiBalance(Dataset):
         total_min = min([len(indexes[i]) for i in range(num_labels)])
 
         if num is not None:
-            samples_per_label = num // (num_labels * (base_ratio + 1))
-            assert samples_per_label * num_labels * (base_ratio + 1) <= num, "No enough data, lower the total num"
+            samples_per_label = int(num / (num_labels * (base_ratio + 1)))
+            assert samples_per_label <= total_min, "No enough data, lower the total num"
 
-            for i in range(2):
+            for i in range(num_labels):
                 indexes[i] = indexes[i][:int(samples_per_label * base_ratio)]
-            for i in range(2, num_labels):
+            for i in range(num_labels, 2 * num_labels):
                 indexes[i] = indexes[i][:samples_per_label]
 
-            remaining_samples = num - samples_per_label * num_labels * (base_ratio + 1)
-            for i in range(remaining_samples):
-                indexes[i] = np.append(indexes[i], indexes[i][-1])
+            # remaining_samples = num - samples_per_label * num_labels * (base_ratio + 1)
+            # for i in range(remaining_samples):
+            #     indexes[i] = np.append(indexes[i], indexes[i][-1])
+        else:
+            for i in range(num_labels):
+                for i in range(num_labels):
+                    indexes[i] = indexes[i][:int(total_min * base_ratio)]
+                for i in range(num_labels, 2 * num_labels):
+                    indexes[i] = indexes[i][:total_min]
+        self.augmented_indices = []
+        if add_aug_ratio > 0:
+            for i in range(num_labels, 2 * num_labels):
+                indice = indexes[i]
+                mask = Bernoulli(torch.tensor([add_aug_ratio])).sample(indice.shape).bool().view(-1)
+                self.augmented_indices.extend(indice[mask])
 
-        for i in range(num_labels):
-            indexes[i] = indexes[i][:int(total_min * base_ratio)]
-            indexes[i + num_labels] = indexes[i + num_labels][:total_min]
-
-        gaussian_sample = random.sample(range(total_min), int(add_aug_ratio * total_min))
-        indexes.append(np.concatenate([indexes[i + num_labels][gaussian_sample] for i in range(num_labels)]))
-        self.aug_cutpoint = sum([len(indexes[i]) for i in range(num_labels * 2)])
         self.indexes = np.concatenate(indexes)
-
         self.num_classes = num_labels
 
     def __len__(self):
@@ -352,7 +361,7 @@ class CelebAMultiBalance(Dataset):
             img = torch.Tensor(file[self.split]['data'][self.indexes[index]] / 255.).permute(2, 0, 1)
             if self.transform != None:
                 img = self.transform(img)
-            if index >= self.aug_cutpoint:
+            if index in self.augmented_indices:
                 if self.add_aug == "gaussian":
                     img += torch.randn_like(img) * np.sqrt(self.add_aug_mag)
                 elif self.add_aug == "crop":
@@ -406,6 +415,20 @@ if __name__ == '__main__':
     # for (img, (label, domain)) in tqdm(loader):
     #     pass
 
-    D = CelebABalance(f"../data/celeba/celeba.hdf5", add_aug_ratio=0.5)
-    print(len(D), D.aug_cutpoint)
-    print(D.__getitem__(106654)[0].shape)
+    train_set = CelebAMultiBalance(f"../data/celeba/celeba.hdf5", target_attrs=["Attractive", "High_Cheekbones"], add_aug_ratio=0.3, num=1000, base_ratio=1.2)
+    print(len(train_set))
+    train_loader = DataLoader(train_set, batch_size=128, shuffle=True, num_workers=8,
+                              pin_memory=True)
+    label_y_collector = torch.zeros(4)
+    label_z_collector = torch.zeros(2)
+    for _, (label_y, label_z) in train_loader:
+        for i in range(4):
+            label_y_collector[i] += (label_y == i).sum()
+        for i in range(2):
+            label_z_collector[i] += (label_z == i).sum()
+
+    for i in range(4):
+        print(f"Label {i}, num: {label_y_collector[i]}")
+
+    for i in range(2):
+        print(f"Sensitive label {i}, num: {label_z_collector[i]}")
