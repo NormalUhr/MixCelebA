@@ -5,7 +5,7 @@ import sys
 from torch.utils.data import DataLoader
 from torchvision.models.resnet import resnet18
 from torch.cuda.amp import autocast, GradScaler
-from dataset import CelebABalance as CelebA
+from dataset import CelebAMultiBalance as CelebA
 from models.model_zoo import *
 from models.resnet9 import resnet9
 from utils import *
@@ -53,7 +53,6 @@ def get_args():
 
     args = parser.parse_args()
 
-    assert args.target_attrs in attr_list
     assert args.domain_attrs in attr_list
 
     return args
@@ -122,7 +121,7 @@ def main(args):
             acc_best_man = checkpoint["acc_best_man"]
             acc_best_woman = checkpoint["acc_best_woman"]
             start_epoch = checkpoint["epoch"]
-    test_set = CelebA(root=args.data_dir, target_attr=args.target_attrs,
+    test_set = CelebA(root=args.data_dir, target_attrs=args.target_attrs,
                       transform=transform_test, split="test", add_aug_ratio=0.0, base_ratio=1.0,
                       num=args.test_num)
     test_loader = DataLoader(test_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=True)
@@ -134,7 +133,7 @@ def main(args):
         if args.evaluate:
             sys.exit()
 
-    train_set = CelebA(root=args.data_dir, target_attr=args.target_attrs, add_aug_ratio=args.gr,
+    train_set = CelebA(root=args.data_dir, target_attrs=args.target_attrs, add_aug_ratio=args.gr,
                        num=args.total_num,
                        base_ratio=(1-args.minor_ratio) / args.minor_ratio,
                        add_aug_mag=args.gv,

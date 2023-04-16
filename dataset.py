@@ -321,12 +321,18 @@ class CelebAMultiBalance(Dataset):
         total_min = min([len(indexes[i]) for i in range(num_labels)])
 
         if num is not None:
-            num = int(num / num_labels)
-            assert num < total_min, "No Enough Data, Lower The Total Num"
-            total_min = num
+            samples_per_label = num // num_labels
+            assert samples_per_label * num_labels <= num, "No enough data, lower the total num"
+
+            for i in range(num_labels):
+                indexes[i] = indexes[i][:samples_per_label]
+
+            remaining_samples = num - samples_per_label * num_labels
+            for i in range(remaining_samples):
+                indexes[i] = np.append(indexes[i], indexes[i][-1])
 
         for i in range(num_labels):
-            indexes[i] = indexes[i][:total_min * base_ratio]
+            indexes[i] = indexes[i][:int(total_min * base_ratio)]
             indexes[i + num_labels] = indexes[i + num_labels][:total_min]
 
         gaussian_sample = random.sample(range(total_min), int(add_aug_ratio * total_min))
