@@ -128,7 +128,7 @@ def main(args):
 
     if args.evaluate:
         print("================= Evaluating on Test Set before Training =================")
-        accuracy, acc_man, acc_woman = evaluation(test_loader, predictor, -1, device)
+        accuracy, acc_man, acc_woman = evaluation(test_loader, predictor, -1, device, num_classes)
         print("The accuracy is {:.4f}, {:.4f}, {:.4f}".format(accuracy, acc_man, acc_woman))
         if args.evaluate:
             sys.exit()
@@ -174,7 +174,7 @@ def main(args):
         p_lr_scheduler.step()
 
         print("================= Test Set =================")
-        accuracy, acc_man, acc_woman, loss, loss_man, loss_woman = evaluation(test_loader, predictor, epoch, device)
+        accuracy, acc_man, acc_woman, loss, loss_man, loss_woman = evaluation(test_loader, predictor, epoch, device, num_classes)
 
         metric = accuracy
         if metric > best_SA:
