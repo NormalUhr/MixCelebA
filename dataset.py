@@ -321,13 +321,15 @@ class CelebAMultiBalance(Dataset):
         total_min = min([len(indexes[i]) for i in range(num_labels)])
 
         if num is not None:
-            samples_per_label = num // num_labels
-            assert samples_per_label * num_labels <= num, "No enough data, lower the total num"
+            samples_per_label = num // (num_labels * (base_ratio + 1))
+            assert samples_per_label * num_labels * (base_ratio + 1) <= num, "No enough data, lower the total num"
 
-            for i in range(num_labels):
+            for i in range(2):
+                indexes[i] = indexes[i][:int(samples_per_label * base_ratio)]
+            for i in range(2, num_labels):
                 indexes[i] = indexes[i][:samples_per_label]
 
-            remaining_samples = num - samples_per_label * num_labels
+            remaining_samples = num - samples_per_label * num_labels * (base_ratio + 1)
             for i in range(remaining_samples):
                 indexes[i] = np.append(indexes[i], indexes[i][-1])
 
