@@ -1,14 +1,15 @@
 import os
+import random
 
 import h5py
 import numpy as np
 import pandas
 import torch
 from PIL import Image
-from torch.utils.data import Dataset, DataLoader
-from torchvision.transforms import ToTensor, RandomCrop, RandomRotation, Compose, Resize
+from torch.utils.data import Dataset
+from torchvision.transforms import RandomCrop, Resize, RandomRotation, Compose
+from torchvision.transforms import ToTensor
 from tqdm import tqdm
-import random
 
 attr_list = ('5_o_Clock_Shadow,Arched_Eyebrows,Attractive,Bags_Under_Eyes,Bald,Bangs,Big_Lips,Big_Nose,'
              'Black_Hair,Blond_Hair,Blurry,Brown_Hair,Bushy_Eyebrows,Chubby,Double_Chin,Eyeglasses,Goatee,Gray_Hair,'
@@ -249,7 +250,8 @@ class CelebABalance(Dataset):
         base_zero_min_idx = np.argmin(np.array([(labels == i).sum() for i in range(2)]))
         base_one_min_idx = np.argmin(np.array([(labels == i).sum() for i in range(2, 4)])) + 2
 
-        total_min = len(indexes[base_one_min_idx]) if len(indexes[base_zero_min_idx]) > len(indexes[base_one_min_idx]) * base_ratio else int(len(indexes[base_zero_min_idx]) / base_ratio)
+        total_min = len(indexes[base_one_min_idx]) if len(indexes[base_zero_min_idx]) > len(
+            indexes[base_one_min_idx]) * base_ratio else int(len(indexes[base_zero_min_idx]) / base_ratio)
         if num is not None:
             num = int(num / 2)
             assert num < (total_min * (base_ratio + 1)) * 2, "No Enough Data, Lower The Total Num"
@@ -287,6 +289,78 @@ class CelebABalance(Dataset):
                     img = add_aug(img)
             label = int(file[self.split]['label'][self.indexes[index]][self.y_index])
             label_z = int(file[self.split]['label'][self.indexes[index]][self.a_index])
+        return img, (label, label_z)
+
+
+class CelebAMultiBalance(Dataset):
+    def __init__(self, root, split='train', transform=None, num=None, base_ratio=1, add_aug_ratio=0.1,
+                 add_aug_mag=.1, target_attrs=None, add_aug="rotation", domain_attr="Blond_Hair") -> None:
+        super().__init__()
+        assert add_aug in ["gaussian", "rotation", "crop"]
+        assert target_attrs is not None
+        for attr in target_attrs:
+            assert attr in attr_list
+        self.add_aug = add_aug
+        self.root = root
+        self.split = split
+        self.transform = transform
+        self.target_attrs = [bytes(attr, 'utf-8') for attr in target_attrs]
+        self.domain_attr = bytes(domain_attr, 'utf-8')
+        self.add_aug_mag = add_aug_mag
+
+        with h5py.File(self.root, mode='r') as file:
+            columns = np.array(file["columns"])
+            self.y_indices = [np.where(columns == attr)[0][0] for attr in self.target_attrs]
+            self.a_index = np.where(columns == self.domain_attr)[0][0]
+            labels = np.sum(
+                [(2 ** i) * file[split]["label"][:, self.y_indices[i]] for i in range(len(self.target_attrs))], axis=0)
+            num_labels = 2 ** len(self.target_attrs)
+            labels += num_labels * file[split]["label"][:, self.a_index]
+
+        indexes = [np.where(labels == i)[0] for i in range(num_labels * 2)]
+        total_min = min([len(indexes[i]) for i in range(num_labels)])
+
+        if num is not None:
+            num = int(num / num_labels)
+            assert num < total_min, "No Enough Data, Lower The Total Num"
+            total_min = num
+
+        for i in range(num_labels):
+            indexes[i] = indexes[i][:total_min * base_ratio]
+            indexes[i + num_labels] = indexes[i + num_labels][:total_min]
+
+        gaussian_sample = random.sample(range(total_min), int(add_aug_ratio * total_min))
+        indexes.append(np.concatenate([indexes[i + num_labels][gaussian_sample] for i in range(num_labels)]))
+        self.aug_cutpoint = sum([len(indexes[i]) for i in range(num_labels * 2)])
+        self.indexes = np.concatenate(indexes)
+
+        self.num_classes = num_labels
+
+    def __len__(self):
+        return self.indexes.shape[0]
+
+    def __getitem__(self, index):
+        with h5py.File(self.root, mode='r') as file:
+            img = torch.Tensor(file[self.split]['data'][self.indexes[index]] / 255.).permute(2, 0, 1)
+            if self.transform != None:
+                img = self.transform(img)
+            if index >= self.aug_cutpoint:
+                if self.add_aug == "gaussian":
+                    img += torch.randn_like(img) * np.sqrt(self.add_aug_mag)
+                elif self.add_aug == "crop":
+                    self.add_aug_mag = int(self.add_aug_mag)
+                    add_aug = Compose([RandomCrop(self.add_aug_mag), Resize(224)])
+                    img = add_aug(img)
+
+                else:
+                    self.add_aug_mag = int(self.add_aug_mag)
+                    add_aug = RandomRotation(self.add_aug_mag)
+                    img = add_aug(img)
+
+            label = int(np.sum([(2 ** i) * file[self.split]['label'][self.indexes[index]][self.y_indices[i]] for i in
+                                range(len(self.target_attrs))]))
+            label_z = int(file[self.split]['label'][self.indexes[index]][self.a_index])
+
         return img, (label, label_z)
 
 

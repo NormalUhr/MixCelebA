@@ -1,11 +1,10 @@
 import argparse
+import os
 import warnings
 
 from torch.utils.data import DataLoader
-from torchvision.models.resnet import resnet18
 
 from dataset import CelebABalance as CelebA
-from models.model_zoo import *
 from models.resnet9 import resnet9
 from utils import *
 
@@ -95,16 +94,20 @@ def main(args):
     total_features = []
     male_features = []
     female_features = []
+    total_label = None
+    total_domain = None
     for x, (y, d) in pbar:
         x = x.to(device)
         y = y.to(device)
         d = d.to(device)
+        total_label = y
+        total_domain = d
         y_man_one_hot = get_one_hot(y[d == 1], 2, device)
         y_woman_one_hot = get_one_hot(y[d == 0], 2, device)
         with torch.no_grad():
             lgt, features = predictor(x, True)
-            lgt_man, man_features = predictor(x[d == 1])
-            lgt_woman, woman_features = predictor(x[d == 0])
+            lgt_man, man_features = predictor(x[d == 1], True)
+            lgt_woman, woman_features = predictor(x[d == 0], True)
             total_features.append(features)
             male_features.append(man_features)
             female_features.append(woman_features)
@@ -127,39 +130,84 @@ def main(args):
         pbar.set_description(f"Test Epoch Acc {100 * acc:.2f}%")
     pbar.set_description(f"Test Epoch Acc {100 * test_true_num / test_total_num:.2f}%")
 
-    total_features = torch.stack(total_features)
-    male_features = torch.stack(male_features)
-    female_features = torch.stack(female_features)
+    total_features = torch.stack(total_features).squeeze(dim=0)
+    male_features = torch.stack(male_features).squeeze(dim=0)
+    female_features = torch.stack(female_features).squeeze(dim=0)
 
+    total_num = features.shape[0]
     male_num = male_features.shape[0]
     female_num = female_features.shape[0]
     print(f"male number: {male_num}")
     print(f"female number: {female_num}")
 
-    mean_total_features = torch.mean(total_features, dim=1)
-    mean_male_features = torch.mean(male_features, dim=1)
-    mean_female_features = torch.mean(female_features, dim=1)
+    mean_total_features = torch.mean(total_features, dim=0)
+    mean_male_features = torch.mean(male_features, dim=0)
+    mean_female_features = torch.mean(female_features, dim=0)
 
     offset_total_features = total_features - mean_total_features
+    print(offset_total_features.shape)
     offset_male_features = male_features - mean_male_features
     offset_female_features = female_features - mean_female_features
 
-    total_matrix = torch.matmul(offset_total_features, offset_total_features.t())
-    total_male_matrix = torch.matmul(offset_male_features, offset_male_features.t())
-    total_female_matrix = torch.matmul(offset_female_features, offset_female_features.t())
+    covariance_matrix = torch.matmul(offset_total_features.t(), offset_total_features) / total_num
+    print(covariance_matrix.shape)
+    covariance_male_matrix = torch.matmul(offset_male_features.t(), offset_male_features) / male_num
+    covariance_female_matrix = torch.matmul(offset_female_features.t(), offset_female_features) / female_num
 
-    _, total_S, _ = torch.svd(total_matrix)
+    total_U, total_S, total_V = torch.svd(covariance_matrix)
     total_ratio = total_S.max() / total_S.min()
-    _, male_S, _ = torch.svd(total_male_matrix)
+    print(total_S.shape)
+    male_U, male_S, male_V = torch.svd(covariance_male_matrix)
     male_ratio = male_S.max() / male_S.min()
-    _, female_S, _ = torch.svd(total_female_matrix)
+    female_U, female_S, female_V = torch.svd(covariance_female_matrix)
     female_ratio = female_S.max() / female_S.min()
 
-    print(total_ratio, male_ratio, female_ratio)
+    print(total_ratio.cpu().item(), male_ratio.cpu().item(), female_ratio.cpu().item())
+    print(total_S.max().cpu().item(), male_S.max().cpu().item(), female_S.max().cpu().item())
+    print(total_S.min().cpu().item(), male_S.min().cpu().item(), female_S.min().cpu().item())
 
+    for i in range(total_S.shape[0]):
+        print(f"{i}: {total_S[i].cpu().item()}, {male_S[i].cpu().item()}, {female_S[i].cpu().item()}")
+
+    torch.save(total_S, os.path.join(args.result_dir, "singular_total.pth"))
+    torch.save(male_S, os.path.join(args.result_dir, "singular_male.pth"))
+    torch.save(female_S, os.path.join(args.result_dir, "singular_female.pth"))
     accuracy, acc_man, acc_woman = test_true_num / test_total_num, test_true_man / test_total_man, test_true_woman / test_total_woman
-
     print("The accuracy is {:.4f}, {:.4f}, {:.4f}".format(accuracy, acc_man, acc_woman))
+
+    index = 5
+
+    total_S[index:] = 0
+    male_S[index:] = 0
+    female_S[index:] = 0
+
+    total_low_features = get_low_rank(total_features)
+    # male_low_features = get_low_rank(male_features)
+    # female_low_features = get_low_rank(female_features)
+
+    total_pred_low_rank = predictor.linear(total_low_features).argmax(1)
+    # male_pred_low_rank = predictor.linear(male_low_features).argmax(1)
+    # female_pred_low_rank = predictor.linear(female_low_features).argmax(1)
+
+    low_test_true_num = (total_pred_low_rank == total_label.view(-1)).type(torch.float).sum().detach().cpu().item()
+    low_test_true_man = ((total_pred_low_rank == total_label.view(-1)).view(-1) * (total_domain == 1).view(-1)).type(
+        torch.float).sum().detach().cpu().item()
+    low_test_true_woman = ((total_pred_low_rank == total_label.view(-1)).view(-1) * (total_domain == 0).view(-1)).type(
+        torch.float).sum().detach().cpu().item()
+
+    accuracy, acc_man, acc_woman = low_test_true_num / test_total_num, low_test_true_man / test_total_man, low_test_true_woman / test_total_woman
+
+    print("Low Rank: The accuracy is {:.4f}, {:.4f}, {:.4f}".format(accuracy, acc_man, acc_woman))
+
+
+def get_low_rank(matrix, rank=5):
+    U, S, V = torch.svd(matrix)
+    S[rank:] = 0
+
+    low_matrix = torch.matmul(U, torch.diag(S))
+    low_matrix = torch.matmul(low_matrix, V)
+
+    return low_matrix
 
 
 if __name__ == '__main__':

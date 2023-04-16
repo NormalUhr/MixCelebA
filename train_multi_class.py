@@ -33,7 +33,7 @@ def get_args():
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument('--resume', action="store_true", default=False)
     parser.add_argument('--domain-attrs', type=str, default='Male')
-    parser.add_argument('--target-attrs', type=str, default='High_Cheekbones')
+    parser.add_argument('--target-attrs', type=str, nargs="+", default=[])
     parser.add_argument('--exp-name', type=str, default=None)
     parser.add_argument('--batch-size', type=int, default=512)
     parser.add_argument('--lr', type=float, default=1e-4)
@@ -71,7 +71,8 @@ def main(args):
     os.makedirs(os.path.join(args.result_dir, "checkpoints"), exist_ok=True)
     os.makedirs(os.path.join(args.result_dir, "csv"), exist_ok=True)
     model_attr_name = args.arch + "_" + "_target_"
-    model_attr_name += str(attr_dict[args.target_attrs]) + "_"
+    for attr in args.target_attrs:
+        model_attr_name += str(attr_dict[attr]) + "_"
     model_attr_name += args.add_aug + "_"
     model_attr_name += f'seed{args.seed}'
     model_attr_name += f'_gr{args.gr}_gv{args.gv}'
@@ -85,16 +86,17 @@ def main(args):
     image_size = 224
     transform_train, transform_test = get_transform(image_size=image_size)
 
-    num_class = 2
+    num_attr = len(args.target_attrs)
+    num_classes = 2 ** num_attr
 
     # init model
     if args.arch == "resnet18":
         predictor = resnet18(pretrained=False)
-        predictor.fc = nn.Linear(512, num_class)
+        predictor.fc = nn.Linear(512, num_classes)
     elif args.arch == "resnet9":
-        predictor = resnet9(num_classes=num_class)
+        predictor = resnet9(num_classes=num_classes)
     else:
-        predictor = resnet20s(num_class)
+        predictor = resnet20s(num_classes)
     predictor = predictor.to(device)
     p_optim = torch.optim.Adam(predictor.parameters(), lr=args.lr, weight_decay=args.wd)
     p_lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(p_optim,
@@ -153,7 +155,7 @@ def main(args):
         true_num = 0
         for x, (y, d) in pbar:
             x, y, d = x.to(device), y.to(device), d.to(device)
-            y_one_hot = get_one_hot(y, num_class, device)  # one-hot [bs, num_class]
+            y_one_hot = get_one_hot(y, num_classes, device)  # one-hot [bs, num_class]
             p_optim.zero_grad()
 
             with autocast():
