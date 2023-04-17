@@ -98,10 +98,7 @@ def main(args):
         predictor = resnet20s(num_classes)
     predictor = predictor.to(device)
     p_optim = torch.optim.Adam(predictor.parameters(), lr=args.lr, weight_decay=args.wd)
-    p_lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(p_optim,
-                                                          gamma=0.1,
-                                                          milestones=[int(0.8 * args.epochs),
-                                                                      int(0.9 * args.epochs)])
+    p_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(p_optim, T_max=args.epochs)
 
     # Load checkpoints
     best_SA = 0.0
