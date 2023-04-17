@@ -100,7 +100,7 @@ def main(args):
 
     predictor.eval()
     pbar = tqdm(train_loader, total=len(train_loader), ncols=120)
-    with torch.no_grad:
+    with torch.no_grad():
         for x, (y, d) in pbar:
             x, y, d = x.to(device), y.to(device), d.to(device)
 
