@@ -80,7 +80,7 @@ def main(args):
     feature_collector = []
 
     def feature_collector_hook(module, input):
-        feature_collector.append(input[0])
+        feature_collector.append(input[0].detach().cpu())
 
     predictor.fc.register_forward_pre_hook(feature_collector_hook)
 
@@ -100,10 +100,11 @@ def main(args):
 
     predictor.eval()
     pbar = tqdm(train_loader, total=len(train_loader), ncols=120)
-    for x, (y, d) in pbar:
-        x, y, d = x.to(device), y.to(device), d.to(device)
+    with torch.no_grad:
+        for x, (y, d) in pbar:
+            x, y, d = x.to(device), y.to(device), d.to(device)
 
-        predictor(x)
+            predictor(x)
 
     feature_collector = torch.cat(feature_collector, dim=0)
     print(f"Collect features of the shape", feature_collector.shape)
