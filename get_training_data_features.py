@@ -97,7 +97,7 @@ def main(args):
                        add_aug_mag=args.gv,
                        add_aug=args.add_aug,
                        transform=transform_train, split="train")
-    train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers,
+    train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers,
                               pin_memory=True)
 
     predictor.eval()
