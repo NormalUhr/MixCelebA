@@ -2,7 +2,6 @@ import argparse
 import warnings
 
 import torch.nn
-from torch.cuda.amp import autocast
 from torch.utils.data import DataLoader
 from torchvision.models.resnet import resnet18
 
@@ -10,6 +9,23 @@ from dataset import CelebAMultiBalance as CelebA
 from models.model_zoo import *
 from models.resnet9 import resnet9
 from utils import *
+
+import numpy as np
+from sklearn.decomposition import PCA
+
+
+def pca_reduce(tensor, n_components):
+    # Convert the tensor to a NumPy array
+    array_data = tensor.numpy()
+
+    # Apply PCA
+    pca = PCA(n_components=n_components)
+    reduced_data = pca.fit_transform(array_data)
+
+    # Convert the reduced data back to a PyTorch tensor
+    reduced_tensor = torch.tensor(reduced_data, dtype=torch.float32)
+
+    return reduced_tensor
 
 warnings.filterwarnings("ignore")
 
@@ -109,6 +125,11 @@ def main(args):
     feature_collector = torch.cat(feature_collector, dim=0)
     print(f"Collect features of the shape", feature_collector.shape)
     torch.save(feature_collector, args.save_path)
+
+    for dim in [5, 25, 100]:
+        # Perform PCA and reduce the dimensionality to 5
+        reduced_data_tensor = pca_reduce(feature_collector, dim)
+        torch.save(reduced_data_tensor, args.save_path.split(".")[0] + f"_pca{dim}" + args.save_path.split(".")[1])
 
 
 if __name__ == '__main__':
