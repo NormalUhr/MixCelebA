@@ -12,7 +12,7 @@ from utils import *
 
 import numpy as np
 from sklearn.decomposition import PCA
-
+from sklearn.mixture import GaussianMixture
 
 def pca_reduce(tensor, n_components):
     # Convert the tensor to a NumPy array
@@ -126,10 +126,21 @@ def main(args):
     print(f"Collect features of the shape", feature_collector.shape)
     torch.save(feature_collector, args.save_path)
 
-    for dim in [5, 25, 100]:
+    for dim in [2, 5, 25, 100]:
         # Perform PCA and reduce the dimensionality to 5
         reduced_data_tensor = pca_reduce(feature_collector, dim)
         torch.save(reduced_data_tensor, args.save_path.split(".")[0] + f"_pca{dim}" + args.save_path.split(".")[1])
+        reduced_data_numpy = reduced_data_tensor.numpy()
+
+        # Fit a GMM with 2 components
+        gm = GaussianMixture(n_components=2, random_state=42)
+        gm.fit(reduced_data_numpy)
+
+        # Compute the average log-likelihood score
+        average_log_likelihood_score = gm.score(reduced_data_numpy)
+
+        print(f"Average Log-Likelihood Score for Dim {dim}:", average_log_likelihood_score)
+
 
 
 if __name__ == '__main__':
