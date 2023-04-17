@@ -126,6 +126,15 @@ def main(args):
     print(f"Collect features of the shape", feature_collector.shape)
     torch.save(feature_collector, args.save_path)
 
+    # Fit a GMM with 2 components
+    gm = GaussianMixture(n_components=2, random_state=42)
+    gm.fit(feature_collector.numpy())
+
+    # Compute the average log-likelihood score
+    average_log_likelihood_score = gm.score(feature_collector.numpy())
+
+    print(f"Average Log-Likelihood Score for Original Feature:", average_log_likelihood_score)
+
     for dim in [2, 5, 25, 100]:
         # Perform PCA and reduce the dimensionality to 5
         reduced_data_tensor = pca_reduce(feature_collector, dim)
