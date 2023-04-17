@@ -135,7 +135,7 @@ def main(args):
 
     print(f"Average Log-Likelihood Score for Original Feature:", average_log_likelihood_score)
 
-    for dim in [2, 5, 25, 100]:
+    for dim in [2, 5, 25, 100, 200, 300, 400]:
         # Perform PCA and reduce the dimensionality to 5
         reduced_data_tensor = pca_reduce(feature_collector, dim)
         torch.save(reduced_data_tensor, args.save_path.split(".")[0] + f"_pca{dim}" + args.save_path.split(".")[1])
