@@ -185,7 +185,7 @@ def main(args):
     # male_low_features = get_low_rank(male_features)
     # female_low_features = get_low_rank(female_features)
 
-    total_pred_low_rank = predictor.linear(total_low_features).argmax(1)
+    total_pred_low_rank = predictor.fc(total_low_features).argmax(1)
     # male_pred_low_rank = predictor.linear(male_low_features).argmax(1)
     # female_pred_low_rank = predictor.linear(female_low_features).argmax(1)
 

@@ -82,9 +82,7 @@ def main(args):
     def feature_collector_hook(module, input):
         feature_collector.append(input[0])
 
-    for module in predictor.modules():
-        if isinstance(module, torch.nn.Linear):
-            module.register_forward_pre_hook(feature_collector_hook)
+    predictor.fc.register_forward_pre_hook(feature_collector_hook)
 
     # Load checkpoints
     if args.pretrained is not None:
@@ -105,8 +103,7 @@ def main(args):
     for x, (y, d) in pbar:
         x, y, d = x.to(device), y.to(device), d.to(device)
 
-        with autocast():
-            predictor(x)
+        predictor(x)
 
     feature_collector = torch.cat(feature_collector, dim=0)
     print(f"Collect features of the shape", feature_collector.shape)

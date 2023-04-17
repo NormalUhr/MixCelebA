@@ -71,11 +71,11 @@ class resnet9(nn.Module):
             nn.Flatten(1),
         )
 
-        self.linear = nn.Linear(in_features=256, out_features=num_classes, bias=True)
+        self.fc = nn.Linear(in_features=256, out_features=num_classes, bias=True)
 
     def forward(self, x, pena=False):
         pena_out = self.conv(x)
-        out = self.linear(pena_out)
+        out = self.fc(pena_out)
         if pena:
             return out, pena_out
         return out
